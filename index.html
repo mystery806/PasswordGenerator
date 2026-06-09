@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>密码生成器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 440px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+
+    .password-display {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 22px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      word-break: break-all;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #333;
+      margin-bottom: 20px;
+      border: 2px solid #e0e0e0;
+    }
+
+    .length-setting {
+      margin-bottom: 20px;
+    }
+
+    .length-setting label {
+      display: block;
+      color: #555;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .length-input {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: #ddd;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+    }
+
+    .length-value {
+      background: #667eea;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .char-counts {
+      margin-bottom: 20px;
+    }
+
+    .char-counts label {
+      display: block;
+      color: #555;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .count-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      background: #f8f8f8;
+      border-radius: 8px;
+    }
+
+    .count-row span {
+      color: #444;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .count-row input {
+      width: 70px;
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .count-row input:focus {
+      border-color: #667eea;
+    }
+
+    .total-count {
+      text-align: right;
+      color: #888;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .total-count.warning {
+      color: #e53e3e;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      flex: 1;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .generate-btn {
+      background: #667eea;
+      color: #fff;
+    }
+
+    .generate-btn:hover {
+      background: #5a6fd6;
+    }
+
+    .copy-btn {
+      background: #48bb78;
+      color: #fff;
+    }
+
+    .copy-btn:hover {
+      background: #38a169;
+    }
+
+    .copy-btn.copied {
+      background: #38a169;
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #48bb78;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .strength-meter {
+      margin-bottom: 20px;
+    }
+
+    .strength-meter label {
+      display: block;
+      color: #555;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .strength-bar {
+      height: 10px;
+      background: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .strength-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .strength-fill.weak { background: #e53e3e; width: 25%; }
+    .strength-fill.fair { background: #dd6b20; width: 50%; }
+    .strength-fill.good { background: #d69e2e; width: 75%; }
+    .strength-fill.strong { background: #38a169; width: 100%; }
+
+    .strength-text {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .strength-text.weak { color: #e53e3e; }
+    .strength-text.fair { color: #dd6b20; }
+    .strength-text.good { color: #d69e2e; }
+    .strength-text.strong { color: #38a169; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>密码生成器</h1>
+    
+    <div class="password-display" id="passwordDisplay">点击生成密码</div>
+    
+    <div class="strength-meter">
+      <label>密码强度</label>
+      <div class="strength-bar">
+        <div class="strength-fill" id="strengthFill"></div>
+      </div>
+      <div class="strength-text" id="strengthText">-</div>
+    </div>
+    
+    <div class="length-setting">
+      <label>密码长度</label>
+      <div class="length-input">
+        <input type="range" id="lengthSlider" min="4" max="32" value="16">
+        <span class="length-value" id="lengthValue">16</span>
+      </div>
+    </div>
+    
+    <div class="char-counts">
+      <label>各类字符数量</label>
+      <div class="count-row">
+        <span>大写字母 (A-Z)</span>
+        <input type="number" id="uppercaseCount" value="3" min="0">
+      </div>
+      <div class="count-row">
+        <span>小写字母 (a-z)</span>
+        <input type="number" id="lowercaseCount" value="6" min="0">
+      </div>
+      <div class="count-row">
+        <span>数字 (0-9)</span>
+        <input type="number" id="numbersCount" value="4" min="0">
+      </div>
+      <div class="count-row">
+        <span>符号 (!@#$%)</span>
+        <input type="number" id="symbolsCount" value="3" min="0">
+      </div>
+      <div class="total-count" id="totalCount">总计: 16 / 16</div>
+    </div>
+    
+    <div class="buttons">
+      <button class="generate-btn" id="generateBtn">生成密码</button>
+      <button class="copy-btn" id="copyBtn">复制密码</button>
+    </div>
+  </div>
+  
+  <div class="toast" id="toast">已复制到剪贴板</div>
+
+  <script>
+    const lengthSlider = document.getElementById('lengthSlider');
+    const lengthValue = document.getElementById('lengthValue');
+    const passwordDisplay = document.getElementById('passwordDisplay');
+    const generateBtn = document.getElementById('generateBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const toast = document.getElementById('toast');
+    const totalCount = document.getElementById('totalCount');
+    const strengthFill = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+    
+    const uppercaseCount = document.getElementById('uppercaseCount');
+    const lowercaseCount = document.getElementById('lowercaseCount');
+    const numbersCount = document.getElementById('numbersCount');
+    const symbolsCount = document.getElementById('symbolsCount');
+
+    const charSets = {
+      uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      lowercase: 'abcdefghijklmnopqrstuvwxyz',
+      numbers: '0123456789',
+      symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?'
+    };
+
+    function getRandomCharfromSet(set) {
+      return set[Math.floor(Math.random() * set.length)];
+    }
+
+    function updateTotalCount() {
+      const total = parseInt(uppercaseCount.value || 0) + 
+                    parseInt(lowercaseCount.value || 0) + 
+                    parseInt(numbersCount.value || 0) + 
+                    parseInt(symbolsCount.value || 0);
+      const length = parseInt(lengthSlider.value);
+      totalCount.textContent = `总计: ${total} / ${length}`;
+      
+      if (total > length) {
+        totalCount.classList.add('warning');
+      } else {
+        totalCount.classList.remove('warning');
+      }
+    }
+
+    lengthSlider.addEventListener('input', (e) => {
+      lengthValue.textContent = e.target.value;
+      updateTotalCount();
+    });
+
+    [uppercaseCount, lowercaseCount, numbersCount, symbolsCount].forEach(input => {
+      input.addEventListener('input', updateTotalCount);
+    });
+
+    function generatePassword() {
+      const upCount = parseInt(uppercaseCount.value) || 0;
+      const lowCount = parseInt(lowercaseCount.value) || 0;
+      const numCount = parseInt(numbersCount.value) || 0;
+      const symCount = parseInt(symbolsCount.value) || 0;
+      const length = parseInt(lengthSlider.value);
+      
+      const total = upCount + lowCount + numCount + symCount;
+      
+      if (total === 0) {
+        passwordDisplay.textContent = '请至少设置一个字符数量';
+        return;
+      }
+      
+      if (total > length) {
+        passwordDisplay.textContent = '字符总数不能超过密码长度';
+        return;
+      }
+
+      let password = '';
+      
+      // Add required characters first
+      for (let i = 0; i < upCount; i++) {
+        password += getRandomCharfromSet(charSets.uppercase);
+      }
+      for (let i = 0; i < lowCount; i++) {
+        password += getRandomCharfromSet(charSets.lowercase);
+      }
+      for (let i = 0; i < numCount; i++) {
+        password += getRandomCharfromSet(charSets.numbers);
+      }
+      for (let i = 0; i < symCount; i++) {
+        password += getRandomCharfromSet(charSets.symbols);
+      }
+      
+      // Fill remaining with random characters from all sets
+      const allChars = charSets.uppercase + charSets.lowercase + charSets.numbers + charSets.symbols;
+      while (password.length < length) {
+        password += getRandomCharfromSet(allChars);
+      }
+      
+      // Shuffle the password
+      password = password.split('').sort(() => Math.random() - 0.5).join('');
+      
+      passwordDisplay.textContent = password;
+      updateStrength(password);
+    }
+
+    function updateStrength(password) {
+      let score = 0;
+      const length = password.length;
+      
+      // Length scoring
+      if (length >= 8) score += 1;
+      if (length >= 12) score += 1;
+      if (length >= 16) score += 1;
+      if (length >= 20) score += 1;
+      
+      // Character type scoring
+      if (/[a-z]/.test(password)) score += 1;
+      if (/[A-Z]/.test(password)) score += 1;
+      if (/[0-9]/.test(password)) score += 1;
+      if (/[^a-zA-Z0-9]/.test(password)) score += 1;
+      
+      // Update UI
+      strengthFill.className = 'strength-fill';
+      strengthText.className = 'strength-text';
+      
+      if (score <= 3) {
+        strengthFill.classList.add('weak');
+        strengthText.classList.add('weak');
+        strengthText.textContent = '弱';
+      } else if (score <= 5) {
+        strengthFill.classList.add('fair');
+        strengthText.classList.add('fair');
+        strengthText.textContent = '中等';
+      } else if (score <= 7) {
+        strengthFill.classList.add('good');
+        strengthText.classList.add('good');
+        strengthText.textContent = '良好';
+      } else {
+        strengthFill.classList.add('strong');
+        strengthText.classList.add('strong');
+        strengthText.textContent = '强';
+      }
+    }
+
+    async function copyPassword() {
+      const password = passwordDisplay.textContent;
+      
+      if (!password || password === '点击生成密码' || 
+          password === '请至少设置一个字符数量' || 
+          password === '字符总数不能超过密码长度') {
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(password);
+        showToast();
+      } catch (err) {
+        const textarea = document.createElement('textarea');
+        textarea.value = password;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast();
+      }
+    }
+
+    function showToast() {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    generateBtn.addEventListener('click', generatePassword);
+    copyBtn.addEventListener('click', copyPassword);
+
+    updateTotalCount();
+    generatePassword();
+  </script>
+</body>
+</html>
